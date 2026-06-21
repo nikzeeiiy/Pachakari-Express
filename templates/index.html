@@ -8,6 +8,11 @@ href="{{ url_for('static', filename='style.css') }}">
 <body>
 
     <h1>Pachakari Express</h1>
+    {% if success %}
+<p style="color:green;">
+    Order Saved Successfully!
+</p>
+{% endif %}
 
     <form action="/submit" method="POST">
 
