@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Admin Dashboard</title>
+    <link rel="stylesheet"
+href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -19,11 +21,19 @@
     {% for order in orders %}
 
     <tr>
-        <td>{{ order[0] }}</td>
-        <td>{{ order[1] }}</td>
-        <td>{{ order[2] }}</td>
-        <td>{{ order[3] }}</td>
-    </tr>
+    <td>{{ order[0] }}</td>
+    <td>{{ order[1] }}</td>
+    <td>{{ order[2] }}</td>
+    <td>{{ order[3] }}</td>
+
+    <td>
+        <form action="/complete/{{ order[0] }}" method="POST">
+            <button type="submit">
+                Order Complete
+            </button>
+        </form>
+    </td>
+</tr>
 
     {% endfor %}
 

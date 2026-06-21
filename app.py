@@ -1,6 +1,5 @@
 import mysql.connector
-from flask import Flask, render_template, request
-
+from flask import Flask, render_template, request, redirect
 app = Flask(__name__)
 
 @app.route("/")
@@ -56,7 +55,7 @@ def submit():
         if connection:
             connection.close()
 
-    return "Order Saved Successfully"
+    return redirect("/")
 @app.route("/admin")
 def admin():
 
@@ -97,6 +96,44 @@ def admin():
         "admin.html",
         orders=orders
     )
+@app.route("/complete/<int:order_id>", methods=["POST"])
+def complete(order_id):
 
+    connection = None
+    cursor = None
+
+    try:
+
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="root123",
+            database="grocery_db"
+        )
+
+        cursor = connection.cursor()
+
+        query = """
+        UPDATE orders
+        SET status = 'Completed'
+        WHERE id = %s
+        """
+
+        cursor.execute(
+            query,
+            (order_id,)
+        )
+
+        connection.commit()
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
+
+    return redirect("/admin")
 if __name__ == "__main__":
     app.run(debug=True)
