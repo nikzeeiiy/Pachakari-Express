@@ -1,118 +1,88 @@
-import mysql.connector
+
 from flask import Flask, render_template, request, redirect
 
+from db_manager import (
+    add_order,
+    get_pending_orders,
+    complete_order
+)
 app = Flask(__name__)
-
-def get_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root123",
-        database="grocery_db"
-    )
-
 
 @app.route("/")
 def home():
     success = request.args.get("success")
-    return render_template("index.html", success=success)
+    return render_template(
+        "index.html",
+        success=success
+    )
 
 
 @app.route("/submit", methods=["POST"])
 def submit():
 
-    customer_name = request.form["customer_name"]
-    phone_number = request.form["phone_number"]
-    grocery_items = request.form["grocery_items"]
+    customer_name = request.form["customer_name"].strip()
+    phone_number = request.form["phone_number"].strip()
+    grocery_items = request.form["grocery_items"].strip()
 
-    connection = None
-    cursor = None
+    if not customer_name:
+        return "Customer name is required"
+
+    if not phone_number:
+        return "Phone number is required"
+
+    if not grocery_items:
+        return "Grocery items are required"
 
     try:
-        connection = get_connection()
-        cursor = connection.cursor()
 
-        query = """
-        INSERT INTO orders
-        (customer_name, phone_number, grocery_items)
-        VALUES (%s, %s, %s)
-        """
-
-        cursor.execute(
-            query,
-            (customer_name, phone_number, grocery_items)
+        add_order(
+            customer_name,
+            phone_number,
+            grocery_items
         )
 
-        connection.commit()
+        return redirect("/?success=1")
 
-    finally:
-        if cursor:
-            cursor.close()
+    except Exception as error:
 
-        if connection:
-            connection.close()
+        print("Database Error:", error)
 
-    return redirect("/?success=1")
+        return "Something went wrong"
 
 
 @app.route("/admin")
 def admin():
 
-    connection = None
-    cursor = None
-
     try:
-        connection = get_connection()
-        cursor = connection.cursor()
 
-        cursor.execute("""
-            SELECT *
-            FROM orders
-            WHERE status = 'Pending'
-            ORDER BY created_at ASC
-        """)
+        orders = get_pending_orders()
 
-        orders = cursor.fetchall()
+        return render_template(
+            "admin.html",
+            orders=orders
+        )
 
-    finally:
-        if cursor:
-            cursor.close()
+    except Exception as error:
 
-        if connection:
-            connection.close()
+        print("Database Error:", error)
 
-    return render_template("admin.html", orders=orders)
+        return "Unable to load orders"
 
 
 @app.route("/complete/<int:order_id>", methods=["POST"])
 def complete(order_id):
 
-    connection = None
-    cursor = None
-
     try:
-        connection = get_connection()
-        cursor = connection.cursor()
 
-        cursor.execute(
-            """
-            UPDATE orders
-            SET status = 'Completed'
-            WHERE id = %s
-            """,
-            (order_id,)
-        )
+        complete_order(order_id)
 
-        connection.commit()
+        return redirect("/admin")
 
-    finally:
-        if cursor:
-            cursor.close()
+    except Exception as error:
 
-        if connection:
-            connection.close()
+        print("Database Error:", error)
 
-    return redirect("/admin")
+        return "Unable to complete order"
 
 
 if __name__ == "__main__":
